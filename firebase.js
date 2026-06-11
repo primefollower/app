@@ -1,0 +1,521 @@
+// ================================
+// Prime Follower - Firebase Module
+// ================================
+
+// ── 1. Firebase Initialization & Config ──────────────────────────────────────
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  addDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  serverTimestamp,
+  increment,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBLlnJt8cdlf6s6nfVSdwW3AexieZe9q6I",
+  authDomain: "prime-follower.firebaseapp.com",
+  projectId: "prime-follower",
+  storageBucket: "prime-follower.firebasestorage.app",
+  messagingSenderId: "407872287170",
+  appId: "1:407872287170:web:3cb424d204914bd50d265b",
+  measurementId: "G-765QSVVHTJ"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ── 2. Exports ────────────────────────────────────────────────────────────────
+
+export {
+  auth, db,
+  onAuthStateChanged, signOut,
+  Timestamp, serverTimestamp, increment,
+  doc, getDoc, setDoc, updateDoc,
+  addDoc, collection, query, where, orderBy, limit, getDocs
+};
+
+// ── 3. User Profile Management ───────────────────────────────────────────────
+
+/**
+ * Fetches the user profile. Auto-creates it if it doesn't exist yet.
+ */
+export async function getUserProfile(uid) {
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  if (snap.exists()) return snap.data();
+
+  // Profile missing — create with defaults
+  await createUserProfile(uid, {});
+  const newSnap = await getDoc(userRef);
+  return newSnap.data();
+}
+
+/**
+ * Creates a new user profile document with safe defaults.
+ * If the profile already exists, only updates last_login.
+ */
+export async function createUserProfile(uid, data) {
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+
+  if (!snap.exists()) {
+  // Generate unique referral code: PRIME + 6 random digits
+  const referralCode = "PRIME" + Math.floor(100000 + Math.random() * 900000).toString();
+
+  await setDoc(userRef, {
+  uid,
+  avatar: "user1.jpg",
+  email: data.email || "",
+  username: data.username || "",
+  credits: 0,
+  total_earned: 0,
+  daily_ads_watched: 0,
+  daily_ads_date: null,
+  daily_credits_earned: 0,
+
+  // Daily checkin
+  lastCheckinDate: null,
+  checkinDay: 0,
+  checkinCycle: 0,
+  last_checkin: null,
+  checkin_streak: 0,
+
+  // Followers
+  total_followers_ordered: 0,
+
+  // PRIME VIRAL BONUS SYSTEM
+  referralCode: referralCode,
+  referredBy: "",
+  referralCount: 0,
+  referralCredited: false,
+  primeViralBonusClaimed: false,
+  referralCompletedUsers: [],
+  total_checkins: 0,
+  day3BonusClaimed: false,
+        // Diamond system (welcome diamond granted by server)
+        diamonds: 0,
+        welcomeDiamondShown: false,
+        welcomeDiamondGranted: false,
+
+  // Referral reward tracking
+  referralReward1Claimed: false,
+  referralReward2Claimed: false,
+  referralReward3Shown: false,
+
+  // Refer code entry tracking
+  referCodeEntered: false,
+
+  // Level System
+  level: 1,
+  level_updated_at: serverTimestamp(),
+  level_reviewed_at: null,
+  lifetime_spending: 0,
+  monthly_spending: 0,
+  last_month_spending: 0,
+  monthly_credits_earned: 0,
+  first_paid_order_completed: false,
+  monthly_free_followers_claimed: false,
+  current_ad_limit: 10,
+  current_ad_multiplier: 1,
+  current_checkin_multiplier: 1,
+  current_delivery_hours: 24,
+
+  created_at: serverTimestamp(),
+  last_login: serverTimestamp()
+});
+  } else {
+    // Migrate old users — add any missing fields
+    const existingData = snap.data();
+    const migrationFields = {};
+
+    if (!existingData.referralCode) {
+      migrationFields.referralCode = "PRIME" + Math.floor(100000 + Math.random() * 900000).toString();
+    }
+    if (existingData.referCodeEntered === undefined) {
+      migrationFields.referCodeEntered = true; // Old users skip the refer code overlay
+    }
+    if (existingData.referredBy === undefined) {
+      migrationFields.referredBy = "";
+    }
+    if (existingData.referralCount === undefined) {
+      migrationFields.referralCount = 0;
+    }
+    if (existingData.referralCredited === undefined) {
+      migrationFields.referralCredited = false;
+    }
+    if (existingData.primeViralBonusClaimed === undefined) {
+      migrationFields.primeViralBonusClaimed = false;
+    }
+    if (existingData.total_checkins === undefined) {
+      migrationFields.total_checkins = 0;
+    }
+    if (existingData.day3BonusClaimed === undefined) {
+      migrationFields.day3BonusClaimed = false;
+    }
+    if (existingData.referralReward1Claimed === undefined) {
+      migrationFields.referralReward1Claimed = false;
+    }
+    if (existingData.referralReward2Claimed === undefined) {
+      migrationFields.referralReward2Claimed = false;
+    }
+    if (existingData.referralReward3Shown === undefined) {
+      migrationFields.referralReward3Shown = false;
+    }
+    if (existingData.total_followers_ordered === undefined) {
+      migrationFields.total_followers_ordered = 0;
+    }
+    if (existingData.total_earned === undefined) {
+      migrationFields.total_earned = 0;
+    }
+
+    if (existingData.diamonds === undefined) {
+      migrationFields.diamonds = 0;
+    }
+    if (existingData.welcomeDiamondShown === undefined) {
+      migrationFields.welcomeDiamondShown = true; // Old users don't see welcome
+    }
+    if (existingData.welcomeDiamondGranted === undefined) {
+      // Old users with diamonds already = treat as granted; others get the claim button
+      migrationFields.welcomeDiamondGranted = (existingData.diamonds || 0) > 0;
+    }
+
+    // Level system migration
+    if (existingData.level === undefined) {
+      migrationFields.level = 1;
+    }
+    if (existingData.level_updated_at === undefined) {
+      migrationFields.level_updated_at = serverTimestamp();
+    }
+    if (existingData.level_reviewed_at === undefined) {
+      migrationFields.level_reviewed_at = null;
+    }
+    if (existingData.lifetime_spending === undefined) {
+      migrationFields.lifetime_spending = 0;
+    }
+    if (existingData.monthly_spending === undefined) {
+      migrationFields.monthly_spending = 0;
+    }
+    if (existingData.last_month_spending === undefined) {
+      migrationFields.last_month_spending = 0;
+    }
+    if (existingData.monthly_credits_earned === undefined) {
+      migrationFields.monthly_credits_earned = 0;
+    }
+    if (existingData.first_paid_order_completed === undefined) {
+      migrationFields.first_paid_order_completed = false;
+    }
+    if (existingData.monthly_free_followers_claimed === undefined) {
+      migrationFields.monthly_free_followers_claimed = false;
+    }
+    if (existingData.current_ad_limit === undefined) {
+      migrationFields.current_ad_limit = 10;
+    }
+    if (existingData.current_ad_multiplier === undefined) {
+      migrationFields.current_ad_multiplier = 1;
+    }
+    if (existingData.current_checkin_multiplier === undefined) {
+      migrationFields.current_checkin_multiplier = 1;
+    }
+    if (existingData.current_delivery_hours === undefined) {
+      migrationFields.current_delivery_hours = 24;
+    }
+    migrationFields.last_login = serverTimestamp();
+
+    await updateDoc(userRef, migrationFields);
+  }
+}
+// ── 4. Order & Transaction Helpers ───────────────────────────────────────────
+
+/**
+ * Logs a credit/debit entry to the transactions collection.
+ */
+export async function logTransaction(uid, action, amount) {
+  await addDoc(collection(db, "transactions"), {
+    user_id: uid,
+    action,
+    amount,
+    date: serverTimestamp()
+  });
+}
+
+/**
+ * Returns how many ads the user has watched today.
+ * Resets the counter if the calendar day has changed.
+ */
+export async function getDailyAdsCount(uid) {
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) return 0;
+
+  const data = snap.data();
+  const today = new Date().toISOString().split("T")[0];
+  const adsDate = data.daily_ads_date
+    ? data.daily_ads_date.toDate().toISOString().split("T")[0]
+    : null;
+
+  if (adsDate !== today) {
+    await updateDoc(userRef, {
+      daily_ads_watched: 0,
+      daily_credits_earned: 0,
+      daily_ads_date: Timestamp.now()
+    });
+    return 0;
+  }
+
+  return data.daily_ads_watched || 0;
+}
+
+/**
+ * Places a follower order, deducts credits, and logs the transaction.
+ * Supports both credit-based and paid (real money) orders.
+ */
+export async function createOrder(uid, orderData) {
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) return { success: false, message: "User not found" };
+
+  const data = snap.data();
+  const currentCredits = data.credits || 0;
+  const totalOrdered = data.total_followers_ordered || 0;
+  const cost = Number(orderData.credits_spent || 0);
+  const isPaidOrder = orderData.isPaidOrder === true;
+
+  // Only check credits for non-paid orders
+  if (!isPaidOrder && currentCredits < cost) {
+    return { success: false, message: "Not enough credits!" };
+  }
+
+  if (totalOrdered + orderData.followers >= 100000) {
+    return { success: false, message: "Maximum 100,000 followers per account reached!" };
+  }
+
+  const orderTime = Timestamp.now();
+  // Get delivery hours from user's level
+  let deliveryHours = 24;
+  try {
+    const userData = snap.data();
+    deliveryHours = userData.current_delivery_hours || 24;
+  } catch (e) {}
+  const completionTime = Timestamp.fromDate(new Date(Date.now() + deliveryHours * 60 * 60 * 1000));
+
+  // Build the order document
+  const orderDoc = {
+    user_id: uid,
+    instagram_username: orderData.instagram_username,
+    instagram_link: orderData.instagram_link || "",
+    followers: orderData.followers,
+    credits_spent: cost,
+    order_time: orderTime,
+    completion_time: completionTime,
+    status: "processing"
+  };
+
+  // Add paid order fields if it's a real money order
+  if (isPaidOrder) {
+    orderDoc.isPaidOrder = true;
+    orderDoc.paidAmount = orderData.paidAmount || 0;
+  }
+
+  const orderRef = await addDoc(collection(db, "orders"), orderDoc);
+
+  // Only deduct credits for non-paid orders
+  if (isPaidOrder) {
+    await updateDoc(userRef, {
+      total_followers_ordered: increment(orderData.followers)
+    });
+  } else {
+    await updateDoc(userRef, {
+      credits: increment(-cost),
+      total_followers_ordered: increment(orderData.followers)
+    });
+  }
+
+  // Log transaction for ALL order types
+  if (isPaidOrder) {
+    await logTransaction(uid, `Paid Order ${orderData.followers} followers (₹${orderData.paidAmount || 0})`, 0);
+  } else {
+    await logTransaction(uid, `Order ${orderData.followers} followers`, -cost);
+  }
+
+  return { success: true, orderId: orderRef.id, completionTime };
+}
+/**
+ * Fetches the most recent transactions for the user (default: 50).
+ */
+export async function getTransactions(uid, limitCount = 50) {
+  const q = query(
+    collection(db, "transactions"),
+    where("user_id", "==", uid),
+    orderBy("date", "desc"),
+    limit(limitCount)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Fetches all currently-processing orders for the user.
+ */
+export async function getActiveOrders(uid) {
+  const q = query(
+    collection(db, "orders"),
+    where("user_id", "==", uid),
+    where("status", "==", "processing"),
+    orderBy("order_time", "desc")
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Submits a contact/support message from the user.
+ */
+export async function submitContactMessage(uid, data) {
+  await addDoc(collection(db, "contact_messages"), {
+    user_id: uid,
+    subject: data.subject,
+    message: data.message,
+    date: serverTimestamp(),
+    status: "pending"
+  });
+  return { success: true };
+}
+
+// ── 5. Daily Check-in System ─────────────────────────────────────────────────
+
+/**
+ * Weighted random selector.
+ * @param {Array<{value: *, weight: number}>} weights
+ */
+function weightedRandom(weights) {
+  const total = weights.reduce((sum, w) => sum + w.weight, 0);
+  let rand = Math.random() * total;
+  for (const w of weights) {
+    rand -= w.weight;
+    if (rand <= 0) return w.value;
+  }
+  return weights[weights.length - 1].value;
+}
+
+/**
+ * Claims the daily check-in reward for a 7-day repeating cycle.
+ * Day 4 requires 5 ads watched; Day 7 requires 10 ads watched.
+ * Must be triggered by user action (guarded by window.__ALLOW_CHECKIN__).
+ */
+export async function claimDailyCheckin(uid) {
+  if (!window.__ALLOW_CHECKIN__) {
+    console.warn("Blocked unauthorized check-in call");
+    return { success: false, message: "Unauthorized trigger" };
+  }
+
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) return { success: false, message: "User not found" };
+
+  const data = snap.data();
+  const today = new Date().toISOString().split("T")[0];
+
+  // Prevent double claim on the same calendar day
+  if (data.lastCheckinDate) {
+    const lastDate = data.lastCheckinDate.toDate().toISOString().split("T")[0];
+    if (lastDate === today) {
+      return { success: false, message: "Already claimed today😅!" };
+    }
+  }
+
+  // Determine ads watched today
+  const adsDate = data.daily_ads_date
+    ? data.daily_ads_date.toDate().toISOString().split("T")[0]
+    : null;
+  const adsWatchedToday = adsDate === today ? (data.daily_ads_watched || 0) : 0;
+
+  // Advance the day counter (wraps at 7)
+  let checkinDay = (data.checkinDay || 0) + 1;
+  let checkinCycle = data.checkinCycle || 0;
+
+  if (checkinDay > 7) {
+    checkinDay = 1;
+    checkinCycle += 1;
+  }
+
+  // Ad requirements for gated days
+  if (checkinDay === 4 && adsWatchedToday < 5) {
+    return { success: false, message: `Watch ${5 - adsWatchedToday} more ads to unlock Day 4` };
+  }
+  if (checkinDay === 7 && adsWatchedToday < 10) {
+    return { success: false, message: `Watch ${10 - adsWatchedToday} more ads to unlock Day 7` };
+  }
+
+  // Determine reward
+  let reward = 0;
+  let isOops = false;
+  let isGift = false;
+
+  // Get checkin multiplier from user profile
+  const checkinMultiplier = data.current_checkin_multiplier || 1;
+
+  switch (checkinDay) {
+    case 1: reward = 1; break;
+    case 2: reward = 2; break;
+    case 3: reward = 2; break;
+    case 4: reward = checkinCycle === 0 ? 3 : 2; break;
+    case 5: reward = 0; isOops = true; break;
+    case 6: reward = 1; break;
+    case 7:
+      isGift = true;
+      reward = 0; // Day 7 gives diamond, not credits
+      break;
+  }
+
+  // Apply multiplier (except day 5 oops and day 7 diamond)
+  if (reward > 0 && !isOops && !isGift) {
+    reward = Math.round(reward * checkinMultiplier * 10) / 10;
+  }
+
+  // On day 7 completion, increment cycle
+  const newCycle = checkinDay === 7 ? checkinCycle + 1 : checkinCycle;
+
+ const updateData = {
+  lastCheckinDate: Timestamp.now(),
+  last_checkin: Timestamp.now(),
+  checkinDay,
+  checkinCycle: newCycle,
+  checkin_streak: checkinDay,
+
+  // PRIME VIRAL BONUS
+  total_checkins: increment(1)
+};
+
+  if (reward > 0) {
+    updateData.credits = increment(reward);
+    updateData.total_earned = increment(reward);
+  }
+
+  await updateDoc(userRef, updateData);
+
+  if (reward > 0) {
+    await logTransaction(uid, `Daily Check-In (Day ${checkinDay})`, reward);
+  }
+
+  return { success: true, reward, day: checkinDay, cycle: newCycle, isOops, isGift };
+}
+
+console.log("✅ Firebase module loaded.");
