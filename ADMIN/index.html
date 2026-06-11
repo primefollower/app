@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prime Follower — Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+  <!-- ═══ AUTH GATE ═══ -->
+  <div id="auth-gate">
+    <div class="auth-card">
+      <img src="../insta.jpeg" class="auth-logo" alt="Prime Follower"/>
+      <h1 class="auth-title">PRIME ADMIN</h1>
+      <p class="auth-desc">Enter your admin credentials to continue</p>
+
+      <div class="auth-input-group">
+        <i class="fas fa-envelope"></i>
+        <input type="email" id="admin-email" placeholder="Admin Email"/>
+      </div>
+
+      <div class="auth-input-group">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="admin-password" placeholder="Password"/>
+      </div>
+
+      <div class="auth-input-group">
+        <i class="fas fa-key"></i>
+        <input type="password" id="admin-secret" placeholder="Admin Secret Key"/>
+      </div>
+
+      <p id="auth-error" class="auth-error"></p>
+
+      <button id="admin-login-btn" class="auth-btn">
+        <i class="fas fa-shield-halved"></i> AUTHENTICATE
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ ADMIN DASHBOARD ═══ -->
+  <div id="admin-dashboard" style="display:none;">
+
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="header-left">
+        <img src="../insta.jpeg" class="header-logo" alt="Logo"/>
+        <div>
+          <h1 class="header-title">PRIME ADMIN</h1>
+          <p class="header-email" id="header-admin-email">admin@prime.com</p>
+        </div>
+      </div>
+      <button id="admin-logout-btn" class="logout-btn">
+        <i class="fas fa-right-from-bracket"></i> Logout
+      </button>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card stat-total">
+        <i class="fas fa-ticket"></i>
+        <div class="stat-info">
+          <span class="stat-number" id="stat-total">0</span>
+          <span class="stat-label">Total Coupons</span>
+        </div>
+      </div>
+      <div class="stat-card stat-active">
+        <i class="fas fa-check-circle"></i>
+        <div class="stat-info">
+          <span class="stat-number" id="stat-active">0</span>
+          <span class="stat-label">Active</span>
+        </div>
+      </div>
+      <div class="stat-card stat-expired">
+        <i class="fas fa-clock"></i>
+        <div class="stat-info">
+          <span class="stat-number" id="stat-expired">0</span>
+          <span class="stat-label">Expired</span>
+        </div>
+      </div>
+      <div class="stat-card stat-disabled">
+        <i class="fas fa-ban"></i>
+        <div class="stat-info">
+          <span class="stat-number" id="stat-disabled">0</span>
+          <span class="stat-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View Switcher -->
+    <div class="action-bar">
+      <button id="view-coupons-btn" class="action-btn create-btn">
+        <i class="fas fa-ticket"></i> Create Coupon
+      </button>
+      <button id="view-orders-btn" class="action-btn refresh-btn">
+        <i class="fas fa-box"></i> Orders
+      </button>
+    </div>
+
+    <!-- COUPONS VIEW -->
+    <div id="coupons-view">
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button id="btn-create-coupon" class="action-btn create-btn">
+        <i class="fas fa-plus"></i> Create Coupon
+      </button>
+      <button id="btn-refresh" class="action-btn refresh-btn">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+
+    <!-- Coupons List -->
+    <div class="coupons-container" id="coupons-container">
+      <div class="loading-state" id="loading-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading coupons...</p>
+      </div>
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <i class="fas fa-ticket"></i>
+        <p>No coupons created yet</p>
+        <span>Click "Create Coupon" to get started</span>
+      </div>
+      <div id="coupons-list"></div>
+    </div>
+    </div><!-- /coupons-view -->
+
+    <!-- ORDERS VIEW -->
+    <div id="orders-view" style="display:none;">
+      <div class="action-bar" style="padding-top:0;">
+        <button class="action-btn refresh-btn order-tab active" data-otab="credit">Credit</button>
+        <button class="action-btn refresh-btn order-tab" data-otab="paid">Paid</button>
+        <button class="action-btn refresh-btn order-tab" data-otab="bonus">Bonus</button>
+      </div>
+      <div class="action-bar" style="padding-top:0;">
+        <button id="orders-refresh" class="action-btn refresh-btn">
+          <i class="fas fa-sync-alt"></i> Refresh Orders
+        </button>
+      </div>
+      <div class="coupons-container">
+        <div class="loading-state" id="orders-loading" style="display:none;">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading orders...</p>
+        </div>
+        <div class="empty-state" id="orders-empty" style="display:none;">
+          <i class="fas fa-box"></i>
+          <p>No orders found</p>
+        </div>
+        <div id="orders-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ CREATE / EDIT COUPON MODAL ═══ -->
+  <div class="modal-overlay" id="coupon-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title"><i class="fas fa-ticket"></i> Create Coupon</h2>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Coupon Code</label>
+          <div class="code-input-row">
+            <input type="text" id="coupon-code" placeholder="Auto-generated if empty" maxlength="20"/>
+            <button id="btn-generate-code" class="gen-btn" title="Generate random code">
+              <i class="fas fa-dice"></i>
+            </button>
+          </div>
+          <span class="form-hint">Leave empty for auto-generation (PRIME + 8 chars)</span>
+        </div>
+
+        <div class="form-group">
+          <label>Discount Percentage</label>
+          <div class="range-row">
+            <input type="range" id="coupon-discount" min="1" max="100" value="10"/>
+            <span class="range-value" id="discount-value">10%</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Valid For</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="validFor" value="both" checked/>
+              <span class="radio-label">Both</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="validFor" value="credits"/>
+              <span class="radio-label">Credits Only</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="validFor" value="paidOrders"/>
+              <span class="radio-label">Paid Only</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Level Restriction</label>
+          <select id="coupon-level" style="width:100%;padding:14px 16px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:15px;font-weight:600;outline:none;">
+            <option value="0">Any Level</option>
+            <option value="1">Prime Starter only</option>
+            <option value="2">Prime Lion only</option>
+            <option value="3">Prime Shark only</option>
+            <option value="4">Prime Elite only</option>
+            <option value="5">Prime Member only</option>
+          </select>
+          <span class="form-hint">Restrict coupon to a specific membership level</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expiry Date</label>
+            <input type="date" id="coupon-expiry"/>
+            <span class="form-hint">Leave empty = no expiry</span>
+          </div>
+          <div class="form-group">
+            <label>Max Uses</label>
+            <input type="number" id="coupon-maxuses" min="0" value="0" placeholder="0 = unlimited"/>
+            <span class="form-hint">0 = unlimited uses</span>
+          </div>
+        </div>
+
+        <div class="form-group" id="upto-group">
+          <label>Maximum Discount (Upto)</label>
+          <div class="code-input-row">
+            <input type="number" id="coupon-upto" min="0" value="0" placeholder="0 = no cap" style="flex:1;"/>
+            <span id="upto-unit" style="padding:14px 16px; background:var(--bg-input); border:1.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text-secondary); font-weight:700; font-size:14px; white-space:nowrap;">Credits</span>
+          </div>
+          <span class="form-hint">e.g. 25% off upto 5 credits → enter 5. Set 0 for no cap.</span>
+        </div>
+
+        <div class="form-group" id="active-toggle-group" style="display:none;">
+          <label>Status</label>
+          <div class="toggle-row">
+            <span>Disabled</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="coupon-active" checked/>
+              <span class="toggle-slider"></span>
+            </label>
+            <span>Active</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modal-cancel" class="modal-btn cancel">Cancel</button>
+        <button id="modal-save" class="modal-btn save">
+          <i class="fas fa-check"></i> Create Coupon
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DELETE CONFIRMATION MODAL ═══ -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal-card delete-card">
+      <div class="delete-icon">🗑️</div>
+      <h3>Delete Coupon?</h3>
+      <p id="delete-coupon-code">CODE</p>
+      <p class="delete-warning">This action cannot be undone.</p>
+      <div class="delete-btns">
+        <button id="delete-cancel" class="modal-btn cancel">Cancel</button>
+        <button id="delete-confirm" class="modal-btn delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
