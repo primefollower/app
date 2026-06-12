@@ -232,8 +232,26 @@ async function createUserProfile(user, username = null) {
         referralReward2Claimed: false,
         referralReward3Shown: false,
 
-        // Refer code entry tracking
+ // Refer code entry tracking
         referCodeEntered: false,
+
+        // Diamond system
+        diamonds: 0,
+        welcomeDiamondShown: false,
+        welcomeDiamondGranted: false,
+
+        // Level system
+        level: 1,
+        lifetime_spending: 0,
+        monthly_spending: 0,
+        last_month_spending: 0,
+        monthly_credits_earned: 0,
+        first_paid_order_completed: false,
+        monthly_free_followers_claimed: false,
+        current_ad_limit: 10,
+        current_ad_multiplier: 1,
+        current_checkin_multiplier: 1,
+        current_delivery_hours: 24,
 
         created_at: serverTimestamp(),
         last_login: serverTimestamp()
