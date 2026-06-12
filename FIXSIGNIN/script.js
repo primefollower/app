@@ -161,16 +161,21 @@ if (user) {
     console.log("✅ User already logged in:", user.email);
     
     // Update last login time in Firestore
-try {
-      await setDoc(doc(db, "users", user.uid), {
-        last_login: serverTimestamp()
-      }, { merge: true });
+    try {
+  try {
+  await updateDoc(doc(db, "users", user.uid), {
+    last_login: serverTimestamp()
+  });
+} catch (e) {
+  console.log("Skip last_login update");
+}
     } catch (err) {
-      console.log("Could not update last login:", err.code);
+      console.log("Could not update last login");
     }
-
-    // Already logged in → go straight to the app
-    window.location.href = "../index.html";
+    
+    // Optional: Auto-redirect to dashboard
+    // Uncomment when ready:
+    // window.location.href = "dashboard.html";
    } else {
     console.log("ℹ️ No user logged in");
   }
@@ -235,10 +240,10 @@ async function createUserProfile(user, username = null) {
       });
       console.log("✅ User profile created in Firestore!");
     } else {
-// Update existing profile (last login)
-      await setDoc(userRef, {
+      // Update existing profile (last login)
+      await updateDoc(userRef, {
         last_login: serverTimestamp()
-      }, { merge: true });
+      });
       console.log("✅ User profile updated!");
     }
   } catch (error) {
